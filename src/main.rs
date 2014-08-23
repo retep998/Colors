@@ -1,4 +1,11 @@
 
+use std::iter::{AdditiveIterator};
+use std::iter::range_step;
+use std::num::{Zero};
+
+use std::io::net::tcp::TcpStream;
+use std::io::{IoResult, BufferedWriter};
+
 mod tables;
 
 static SRGB: ColorSpace = ColorSpace {
@@ -45,19 +52,18 @@ struct ColorXyz {
 }
 
 impl ColorXyz {
+    fn from_array(arr: &[f64, ..3]) -> ColorXyz {
+        ColorXyz {
+            x: arr[0],
+            y: arr[1],
+            z: arr[2],
+        }
+    }
     fn from_wavelength(wavelength: uint) -> ColorXyz {
         use self::tables::CIE_COLOR_MATCH;
         match CIE_COLOR_MATCH.get(wavelength - 390) {
-            Some(c) => ColorXyz {
-                x: c[0],
-                y: c[1],
-                z: c[2],
-            },
-            None => ColorXyz {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            },
+            Some(c) => ColorXyz::from_array(c),
+            None => Zero::zero(),
         }
     }
     fn to_rgb(&self, cs: &ColorSpace) -> ColorRgbF64 {
@@ -87,6 +93,38 @@ impl ColorXyz {
             x: self.x.div(&m),
             y: self.y.div(&m),
             z: self.z.div(&m),
+        }
+    }
+}
+
+impl Zero for ColorXyz {
+    fn zero() -> ColorXyz {
+        ColorXyz {
+            x: 0.,
+            y: 0.,
+            z: 0.,
+        }
+    }
+    fn is_zero(&self) -> bool {
+        self.x == 0. && self.y == 0. && self.z == 0.
+    }
+}
+
+impl Add<ColorXyz, ColorXyz> for ColorXyz {
+    fn add(&self, o: &ColorXyz) -> ColorXyz {
+        ColorXyz {
+            x: self.x + o.x,
+            y: self.y + o.y,
+            z: self.z + o.z,
+        }
+    }
+}
+impl Mul<f64, ColorXyz> for ColorXyz {
+    fn mul(&self, o: &f64) -> ColorXyz {
+        ColorXyz {
+            x: self.x.mul(o),
+            y: self.y.mul(o),
+            z: self.z.mul(o),
         }
     }
 }
@@ -257,6 +295,7 @@ fn rainbow_username() {
         println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
     }
 }
+
 fn irc_nick_colors() {
     let num = 9u;
     for c in range(0, num).map(|i| {
@@ -266,6 +305,30 @@ fn irc_nick_colors() {
         println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
     }
 }
+
+fn sample(w: f64, t: f64) -> f64 {
+    let h = 6.62606957E-34;
+    let c = 299792458.;
+    let k = 1.3806488E-23;
+    let v = c / w;
+    (2. * h * v.powi(3)) / (c.powi(2) * (((h * v) / (k * t)).exp() - 1.))
+}
+
+fn black_body(temp: f64) -> ColorXyz {
+    tables::CIE_COLOR_MATCH.iter().enumerate().map(|(wave, col)| {
+        let energy = sample((wave as f64 + 390.) * 1E-9, temp);
+        ColorXyz::from_array(col) * energy
+    }).sum()
+}
+
+fn stuff() {
+    for i in range(0i, 14) {
+        let i = i as f64 * 100. + 1000.;
+        let c = black_body(i).to_rgb(&SRGB).constrain().normalize().encode_srgb().to_int();
+        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
+    }
+}
+
 fn main() {
-    irc_nick_colors()
+    stuff()
 }
