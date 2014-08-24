@@ -1,10 +1,9 @@
+// Copyright 2014 Peter Atashian
+
+#![allow(dead_code)]
 
 use std::iter::{AdditiveIterator};
-use std::iter::range_step;
 use std::num::{Zero};
-
-use std::io::net::tcp::TcpStream;
-use std::io::{IoResult, BufferedWriter};
 
 mod tables;
 
@@ -38,11 +37,6 @@ struct ColorSpace {
     b: ColorXyy,
     w: ColorXyy,
 }
-
-#[deriving(Show)]
-struct Color3<T, U>(T, T, T);
-#[deriving(Show)]
-struct Color4<T, U>(T, T, T, T);
 
 #[deriving(Show)]
 struct ColorXyz {
@@ -276,6 +270,27 @@ impl Div<f64, ColorRgbF64> for ColorRgbF64 {
     }
 }
 
+#[deriving(Show)]
+struct Color3<T, U>(T, T, T);
+#[deriving(Show)]
+struct Color4<T, U>(T, T, T, T);
+
+impl<T, U> Mul<Color4<T, U>, Color4<T, U>> for Color4<T, U> where T: Mul<T, T> + Copy {
+    fn mul(&self, o: &Color4<T, U>) -> Color4<T, U> {
+        let Color4(a1, a2, a3, a4) = *self;
+        let Color4(b1, b2, b3, b4) = *o;
+        Color4(a1 * b1, a2 * b2, a3 * b3, a4 * b4)
+    }
+}
+impl<T, U> Mul<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Mul<T, T> + Copy {
+    fn mul(&self, o: &Color3<T, U>) -> Color3<T, U> {
+        let Color3(a1, a2, a3) = *self;
+        let Color3(b1, b2, b3) = *o;
+        Color3(a1 * b1, a2 * b2, a3 * b3)
+    }
+}
+
+
 fn rainbow_username() {
     let s = "ABCDEFGHI";
     let len = s.len();
@@ -329,6 +344,27 @@ fn stuff() {
     }
 }
 
+fn wikipedia() {
+    let num = 5u;
+    let target = 0.2;
+    for i in range(0, num) {
+        let hue = i as f64 * (6. / num as f64);
+        let c = ColorRgbF64::from_hue(hue).target_luminance(target, &SRGB).encode_srgb().to_int();
+        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
+    }
+    let c = ColorRgbF64::white().target_luminance(target, &SRGB).encode_srgb().to_int();
+    println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
+}
+
+fn grayscale(c: u32) -> f64 {
+    let r = (c >> 16) as u8;
+    let g = (c >> 8) as u8;
+    let b = (c >> 0) as u8;
+    ColorRgbU8 { r: r, g: g, b: b }.to_float().decode_srgb().luminance(&SRGB)
+}
+
 fn main() {
-    stuff()
+    let a = Color4::<int, int>(1, 2, 3, 4);
+    let b = a * a;
+    println!("{}", b);
 }
