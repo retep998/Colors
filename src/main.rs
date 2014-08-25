@@ -1,4 +1,4 @@
-// Copyright 2014 Peter Atashian
+// Copyright © 2014, Peter Atashian
 
 #![allow(dead_code)]
 
@@ -321,15 +321,14 @@ fn irc_nick_colors() {
     }
 }
 
-fn sample(w: f64, t: f64) -> f64 {
-    let h = 6.62606957E-34;
-    let c = 299792458.;
-    let k = 1.3806488E-23;
-    let v = c / w;
-    (2. * h * v.powi(3)) / (c.powi(2) * (((h * v) / (k * t)).exp() - 1.))
-}
-
 fn black_body(temp: f64) -> ColorXyz {
+    fn sample(w: f64, t: f64) -> f64 {
+        let h = 6.62606957E-34;
+        let c = 299792458.;
+        let k = 1.3806488E-23;
+        let v = c / w;
+        (2. * h * v.powi(3)) / (c.powi(2) * (((h * v) / (k * t)).exp() - 1.))
+    }
     tables::CIE_COLOR_MATCH.iter().enumerate().map(|(wave, col)| {
         let energy = sample((wave as f64 + 390.) * 1E-9, temp);
         ColorXyz::from_array(col) * energy
