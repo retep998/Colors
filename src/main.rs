@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+extern crate term;
+
 use std::iter::{AdditiveIterator};
 use std::num::{Zero};
 
@@ -123,7 +125,7 @@ impl Mul<f64, ColorXyz> for ColorXyz {
     }
 }
 
-#[allow(uppercase_variables)]
+#[allow(non_snake_case)]
 #[deriving(Show)]
 struct ColorXyy {
     x: f64,
@@ -272,24 +274,26 @@ impl Div<f64, ColorRgbF64> for ColorRgbF64 {
 
 #[deriving(Show)]
 struct Color3<T, U>(T, T, T);
-#[deriving(Show)]
-struct Color4<T, U>(T, T, T, T);
 
-impl<T, U> Mul<Color4<T, U>, Color4<T, U>> for Color4<T, U> where T: Mul<T, T> + Copy {
-    fn mul(&self, o: &Color4<T, U>) -> Color4<T, U> {
-        let Color4(a1, a2, a3, a4) = *self;
-        let Color4(b1, b2, b3, b4) = *o;
-        Color4(a1 * b1, a2 * b2, a3 * b3, a4 * b4)
-    }
-}
-impl<T, U> Mul<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Mul<T, T> + Copy {
+impl<T, U> Mul<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Mul<T, T> {
     fn mul(&self, o: &Color3<T, U>) -> Color3<T, U> {
-        let Color3(a1, a2, a3) = *self;
-        let Color3(b1, b2, b3) = *o;
-        Color3(a1 * b1, a2 * b2, a3 * b3)
+        let &Color3(ref a1, ref a2, ref a3) = self;
+        let &Color3(ref b1, ref b2, ref b3) = o;
+        Color3(a1.mul(b1), a2.mul(b2), a3.mul(b3))
     }
 }
-
+impl<T, U> Add<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Add<T, T> {
+    fn add(&self, o: &Color3<T, U>) -> Color3<T, U> {
+        let &Color3(ref a1, ref a2, ref a3) = self;
+        let &Color3(ref b1, ref b2, ref b3) = o;
+        Color3(a1.add(b1), a2.add(b2), a3.add(b3))
+    }
+}
+impl<T, U> Color3<T, U> where T: Float {
+    fn normalize(&self) -> Color3<T, U> {
+        unimplemented!()
+    }
+}
 
 fn rainbow_username() {
     let s = "ABCDEFGHI";
@@ -362,8 +366,17 @@ fn grayscale(c: u32) -> f64 {
     ColorRgbU8 { r: r, g: g, b: b }.to_float().decode_srgb().luminance(&SRGB)
 }
 
+fn print_colors() {
+    for i in range(0u16, 256) {
+        print!("\x1b[48;5;{}m ", i);
+        if i % 64 == 63 { println!("\x1b[0m") }
+    }
+    for i in range(0u16, 256) {
+        print!("\x1b[38;5;{}mX", i);
+        if i % 64 == 63 { println!("\x1b[0m") }
+    }
+}
+
 fn main() {
-    let a = Color4::<int, int>(1, 2, 3, 4);
-    let b = a * a;
-    println!("{}", b);
+    println!("beep beep");
 }

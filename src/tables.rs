@@ -1,3 +1,4 @@
+// Copyright © 2014, Peter Atashian
 
 pub static CIE_COLOR_MATCH: [[f64, ..3], ..441] = [
     [3.769647E-03, 4.146161E-04, 1.847260E-02],
