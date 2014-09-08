@@ -1,15 +1,12 @@
 // Copyright © 2014, Peter Atashian
 
-#![allow(dead_code)]
-
 extern crate term;
 
-use std::iter::{AdditiveIterator};
 use std::num::{Zero};
 
-mod tables;
+pub mod tables;
 
-static SRGB: ColorSpace = ColorSpace {
+pub static SRGB: ColorSpace = ColorSpace {
     r: ColorXyy {
         x: 0.6400,
         y: 0.3300,
@@ -33,36 +30,36 @@ static SRGB: ColorSpace = ColorSpace {
 };
 
 #[deriving(Show)]
-struct ColorSpace {
-    r: ColorXyy,
-    g: ColorXyy,
-    b: ColorXyy,
-    w: ColorXyy,
+pub struct ColorSpace {
+    pub r: ColorXyy,
+    pub g: ColorXyy,
+    pub b: ColorXyy,
+    pub w: ColorXyy,
 }
 
 #[deriving(Show)]
-struct ColorXyz {
-    x: f64,
-    y: f64,
-    z: f64,
+pub struct ColorXyz {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 impl ColorXyz {
-    fn from_array(arr: &[f64, ..3]) -> ColorXyz {
+    pub fn from_array(arr: &[f64, ..3]) -> ColorXyz {
         ColorXyz {
             x: arr[0],
             y: arr[1],
             z: arr[2],
         }
     }
-    fn from_wavelength(wavelength: uint) -> ColorXyz {
+    pub fn from_wavelength(wavelength: uint) -> ColorXyz {
         use self::tables::CIE_COLOR_MATCH;
         match CIE_COLOR_MATCH.get(wavelength - 390) {
             Some(c) => ColorXyz::from_array(c),
             None => Zero::zero(),
         }
     }
-    fn to_rgb(&self, cs: &ColorSpace) -> ColorRgbF64 {
+    pub fn to_rgb(&self, cs: &ColorSpace) -> ColorRgbF64 {
         let (xc, yc, zc) = (self.x, self.y, self.z);
         let (xr, yr, zr) = (cs.r.x, cs.r.y, 1. - (cs.r.x + cs.r.y));
         let (xg, yg, zg) = (cs.g.x, cs.g.y, 1. - (cs.g.x + cs.g.y));
@@ -83,7 +80,7 @@ impl ColorXyz {
             b: bx * xc + by * yc + bz * zc,
         }
     }
-    fn normalize(&self) -> ColorXyz {
+    pub fn normalize(&self) -> ColorXyz {
         let m = self.x.max(self.y).max(self.z);
         ColorXyz {
             x: self.x.div(&m),
@@ -127,21 +124,21 @@ impl Mul<f64, ColorXyz> for ColorXyz {
 
 #[allow(non_snake_case)]
 #[deriving(Show)]
-struct ColorXyy {
-    x: f64,
-    y: f64,
-    Y: f64,
+pub struct ColorXyy {
+    pub x: f64,
+    pub y: f64,
+    pub Y: f64,
 }
 
 #[deriving(Show)]
-struct ColorRgbU8 {
-    r: u8,
-    g: u8,
-    b: u8,
+pub struct ColorRgbU8 {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 impl ColorRgbU8 {
-    fn to_float(&self) -> ColorRgbF64 {
+    pub fn to_float(&self) -> ColorRgbF64 {
         ColorRgbF64 {
             r: self.r as f64 / 255.,
             g: self.g as f64 / 255.,
@@ -151,24 +148,24 @@ impl ColorRgbU8 {
 }
 
 #[deriving(Show)]
-struct ColorRgbF64 {
-    r: f64,
-    g: f64,
-    b: f64,
+pub struct ColorRgbF64 {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 impl ColorRgbF64 {
-    fn to_int(&self) -> ColorRgbU8 {
+    pub fn to_int(&self) -> ColorRgbU8 {
         ColorRgbU8 {
             r: (self.r.min(1.).max(0.) * 255.).round() as u8,
             g: (self.g.min(1.).max(0.) * 255.).round() as u8,
             b: (self.b.min(1.).max(0.) * 255.).round() as u8,
         }
     }
-    fn luminance(&self, cs: &ColorSpace) -> f64 {
+    pub fn luminance(&self, cs: &ColorSpace) -> f64 {
         self.r * cs.r.Y + self.g * cs.g.Y + self.b * cs.b.Y
     }
-    fn normalize(&self) -> ColorRgbF64 {
+    pub fn normalize(&self) -> ColorRgbF64 {
         let m = self.r.max(self.g).max(self.b);
         ColorRgbF64 {
             r: self.r.div(&m),
@@ -176,7 +173,7 @@ impl ColorRgbF64 {
             b: self.b.div(&m),
         }
     }
-    fn constrain(&self) -> ColorRgbF64 {
+    pub fn constrain(&self) -> ColorRgbF64 {
         let w = 0f64.min(self.r).min(self.g).min(self.b);
         ColorRgbF64 {
             r: self.r - w,
@@ -184,7 +181,7 @@ impl ColorRgbF64 {
             b: self.b - w,
         }
     }
-    fn encode_srgb(&self) -> ColorRgbF64 {
+    pub fn encode_srgb(&self) -> ColorRgbF64 {
         fn encode(x: f64) -> f64 {
             if x <= 0.0031308 {
                 x * 12.92
@@ -198,7 +195,7 @@ impl ColorRgbF64 {
             b: encode(self.b),
         }
     }
-    fn decode_srgb(&self) -> ColorRgbF64 {
+    pub fn decode_srgb(&self) -> ColorRgbF64 {
         fn decode(x: f64) -> f64 {
             if x <= 0.04045 {
                 x / 12.92
@@ -212,7 +209,7 @@ impl ColorRgbF64 {
             b: decode(self.b),
         }
     }
-    fn from_hue(hue: f64) -> ColorRgbF64 {
+    pub fn from_hue(hue: f64) -> ColorRgbF64 {
         let x = 1. - (hue % 2. - 1.).abs();
         match hue {
             h if h >= 0. && h < 1. => ColorRgbF64 { r: 1., g: x, b: 0. },
@@ -224,7 +221,7 @@ impl ColorRgbF64 {
             _ => unreachable!(),
         }
     }
-    fn target_luminance(&self, lum: f64, cs: &ColorSpace) -> ColorRgbF64 {
+    pub fn target_luminance(&self, lum: f64, cs: &ColorSpace) -> ColorRgbF64 {
         let l = self.luminance(cs);
         if l < lum {
             let d = (lum - 1.) / (l - 1.);
@@ -233,7 +230,7 @@ impl ColorRgbF64 {
             self * (lum / l)
         }
     }
-    fn white() -> ColorRgbF64 {
+    pub fn white() -> ColorRgbF64 {
         ColorRgbF64 {
             r: 1.,
             g: 1.,
@@ -273,8 +270,13 @@ impl Div<f64, ColorRgbF64> for ColorRgbF64 {
 }
 
 #[deriving(Show)]
-struct Color3<T, U>(T, T, T);
+pub struct Color3<T, U>(T, T, T);
 
+impl<T, U> Color3<T, U> where T: Float {
+    pub fn normalize(&self) -> Color3<T, U> {
+        unimplemented!()
+    }
+}
 impl<T, U> Mul<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Mul<T, T> {
     fn mul(&self, o: &Color3<T, U>) -> Color3<T, U> {
         let &Color3(ref a1, ref a2, ref a3) = self;
@@ -288,95 +290,4 @@ impl<T, U> Add<Color3<T, U>, Color3<T, U>> for Color3<T, U> where T: Add<T, T> {
         let &Color3(ref b1, ref b2, ref b3) = o;
         Color3(a1.add(b1), a2.add(b2), a3.add(b3))
     }
-}
-impl<T, U> Color3<T, U> where T: Float {
-    fn normalize(&self) -> Color3<T, U> {
-        unimplemented!()
-    }
-}
-
-fn rainbow_username() {
-    let s = "ABCDEFGHI";
-    let len = s.len();
-    let num = len - 1;
-    let lo = 400;
-    let hi = 650;
-    let colors = range(0, len).map(|i| {
-        let xyz = ColorXyz::from_wavelength(lo + (num - i) * (hi - lo) / num);
-        (xyz.to_rgb(&SRGB).constrain().normalize() + ColorRgbF64::white() * 0.1).normalize()
-    }).collect::<Vec<ColorRgbF64>>();
-    let minlum = colors.iter().fold(1f64, |s, c| {
-        s.min(c.luminance(&SRGB))
-    });
-    for c in colors.iter().map(|c| {
-        (c * minlum / c.luminance(&SRGB)).encode_srgb().to_int()
-    }) {
-        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
-    }
-}
-
-fn irc_nick_colors() {
-    let num = 9u;
-    for c in range(0, num).map(|i| {
-        let hue = i as f64 * (6. / num as f64);
-        ColorRgbF64::from_hue(hue).target_luminance(0.5, &SRGB).encode_srgb().to_int()
-    }) {
-        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
-    }
-}
-
-fn black_body(temp: f64) -> ColorXyz {
-    fn sample(w: f64, t: f64) -> f64 {
-        let h = 6.62606957E-34;
-        let c = 299792458.;
-        let k = 1.3806488E-23;
-        let v = c / w;
-        (2. * h * v.powi(3)) / (c.powi(2) * (((h * v) / (k * t)).exp() - 1.))
-    }
-    tables::CIE_COLOR_MATCH.iter().enumerate().map(|(wave, col)| {
-        let energy = sample((wave as f64 + 390.) * 1E-9, temp);
-        ColorXyz::from_array(col) * energy
-    }).sum()
-}
-
-fn stuff() {
-    for i in range(0i, 14) {
-        let i = i as f64 * 100. + 1000.;
-        let c = black_body(i).to_rgb(&SRGB).constrain().normalize().encode_srgb().to_int();
-        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
-    }
-}
-
-fn wikipedia() {
-    let num = 5u;
-    let target = 0.2;
-    for i in range(0, num) {
-        let hue = i as f64 * (6. / num as f64);
-        let c = ColorRgbF64::from_hue(hue).target_luminance(target, &SRGB).encode_srgb().to_int();
-        println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
-    }
-    let c = ColorRgbF64::white().target_luminance(target, &SRGB).encode_srgb().to_int();
-    println!("{:02X}{:02X}{:02X}", c.r, c.g, c.b);
-}
-
-fn grayscale(c: u32) -> f64 {
-    let r = (c >> 16) as u8;
-    let g = (c >> 8) as u8;
-    let b = (c >> 0) as u8;
-    ColorRgbU8 { r: r, g: g, b: b }.to_float().decode_srgb().luminance(&SRGB)
-}
-
-fn print_colors() {
-    for i in range(0u16, 256) {
-        print!("\x1b[48;5;{}m ", i);
-        if i % 64 == 63 { println!("\x1b[0m") }
-    }
-    for i in range(0u16, 256) {
-        print!("\x1b[38;5;{}mX", i);
-        if i % 64 == 63 { println!("\x1b[0m") }
-    }
-}
-
-fn main() {
-    println!("beep beep");
 }
